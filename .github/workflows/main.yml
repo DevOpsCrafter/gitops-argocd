@@ -34,7 +34,7 @@ jobs:
       - name: Update version
         run: | 
           git_hash=$(git rev-parse --short "${{ github.sha }}")
-          sed -Ei "s/(version:).*/\1 refs\/heads\/main-$git_hash/" ./manifests/deployment.yaml
+          sed -Ei "s/(version:).*/\1 refs\/heads\/main-$git_hash/" ./manifests/deployment.yml
 
       - name: Commit and push changes
         uses: devops-infra/action-commit-push@v0.3
