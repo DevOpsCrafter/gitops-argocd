@@ -19,14 +19,3 @@ spec:
           image: testacrpd.azurecr.io/myimage:e7a4202
           ports:
             - containerPort: 8080
-          env:
-            - name: REGISTRY_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: my-registry-credentials
-                  key: username
-            - name: REGISTRY_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: my-registry-credentials
-                  key: password
