@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Pushing the Image
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Login to Azure Container Registry (ACR)
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.REGISTRY_NAME }}.azurecr.io
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    - name: Build, tag, and push image to Azure Container Registry (ACR)
+      env:
+        REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
+      run: |
+        # Build a docker container and push it to ACR
+        git_hash=$(git rev-parse --short "$GITHUB_SHA")
+        docker build -t $REGISTRY_NAME.azurecr.io/myimage:${GITHUB_REF##*/}-$git_hash .
+        echo "Pushing image to ACR..."
+        docker push $REGISTRY_NAME.azurecr.io/myimage:${GITHUB_REF##*/}-$git_hash
+
+    - name: Set up Azure Kubernetes Service (AKS) context
+      uses: azure/aks-set-context@v1
+      with:
+        creds: '${{ secrets.AZURE_CREDENTIALS }}'
+        cluster-name: ${{ secrets.CLUSTER_NAME }}
+        resource-group: ${{ secrets.CLUSTER_RESOURCE_GROUP }}
+
+    - name: Create namespace if it doesn't exist
+      env:
+        NAMESPACE: ${{ secrets.NAMESPACE }}
+      run: |
+        kubectl create namespace $NAMESPACE --dry-run -o json | kubectl apply -f -
+
+    - name: Create image pull secret for Azure Container Registry (ACR)
+      env:
+        REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
+        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        NAMESPACE: ${{ secrets.NAMESPACE }}
+      run: |
+        az login --service-principal --username ${{ secrets.CLIENT_ID }} --password ${{ secrets.CLIENT_SECRET }} --tenant ${{ secrets.TENANT_ID }}
+        az aks get-credentials --resource-group ${{ secrets.CLUSTER_RESOURCE_GROUP }} --name ${{ secrets.CLUSTER_NAME }}
+        kubectl create secret docker-registry $REGISTRY_NAME-registry-connection --docker-server=$REGISTRY_NAME.azurecr.io --docker-username=$REGISTRY_USERNAME --docker-password=$REGISTRY_PASSWORD --namespace=$NAMESPACE
+
+    - name: Deploy app to Azure Kubernetes Service (AKS)
+      env:
+        REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
+        NAMESPACE: ${{ secrets.NAMESPACE }}
+      run: |
+        kubectl apply -f manifests/deployment.yml -n $NAMESPACE
+        kubectl apply -f manifests/service.yml -n $NAMESPACE
+        kubectl set image deployment/myapp myapp=$REGISTRY_NAME.azurecr.io/myimage:${GITHUB_REF##*/}-$git_hash -n $NAMESPACE
