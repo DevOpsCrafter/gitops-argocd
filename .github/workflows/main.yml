@@ -32,7 +32,7 @@ jobs:
           docker push $REGISTRY_NAME.azurecr.io/myimage:$image_tag
 
       - name: Update version
-        run: |
+        run: | 
           git_hash=$(git rev-parse --short "${{ github.sha }}")
           sed -i "s/version:.*/version: ${{ github.ref }}-$git_hash/" ./manifests/deployment.yaml
 
