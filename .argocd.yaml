@@ -8,7 +8,7 @@ spec:
     server: 'https://kubernetes.default.svc'
   project: default
   source:
-    repoURL: https://github.com/DevOpsCrafter/gitops-argocd
+    repoURL: 'https://github.com/DevOpsCrafter/gitops-argocd'
     path: ./manifests
     targetRevision: main
   syncPolicy:
