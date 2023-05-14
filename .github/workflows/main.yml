@@ -59,4 +59,4 @@ jobs:
 
       - name: Sync Application
         run: |
-          argocd app sync my-app --wait
+          argocd app sync my-app
