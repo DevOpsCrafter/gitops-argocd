@@ -26,7 +26,7 @@ jobs:
           REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
         run: |
           git_hash=$(git rev-parse --short "${{ github.sha }}")
-          image_tag="${{ github.ref }}/commit-$git_hash"
+          image_tag="$git_hash"
           docker build -t $REGISTRY_NAME.azurecr.io/myimage:$image_tag .
           echo "Pushing image to ACR..."
           docker push $REGISTRY_NAME.azurecr.io/myimage:$image_tag
