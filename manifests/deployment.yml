@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: my-container
-          image: testacrpd.azurecr.io/myimage:e7a4202
+          image: testacrpd.azurecr.io/flask:1
           ports:
             - containerPort: 8080
