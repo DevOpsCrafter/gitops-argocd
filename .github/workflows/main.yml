@@ -58,7 +58,7 @@ jobs:
         inlineScript: |
           $line = Get-Content manifests/deployment.yml | Select-String image: | Select-Object -ExpandProperty Line
           $content = Get-Content manifests/deployment.yml
-          $content | ForEach-Object {$_ -replace $line,"        - image: testacrpd.azurecr.io/myimage:${{ github.run_number }}"} | Set-Content manifests/deployment.yml
+          $content | ForEach-Object {$_ -replace $line,"          image: testacrpd.azurecr.io/myimage:${{ github.run_number }}"} | Set-Content manifests/deployment.yml
         azPSVersion: "latest"
     
     - name: Commit changes in manifest to repo
