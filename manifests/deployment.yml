@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: my-container
-        image: .azurecr.io/:26
+        image: testacrpd.azurecr.io/:27
           ports:
             - containerPort: 8080
