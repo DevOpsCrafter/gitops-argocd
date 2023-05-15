@@ -58,7 +58,7 @@ jobs:
         inlineScript: |
           $line = Get-Content manifests/deployment.yml | Select-String image: | Select-Object -ExpandProperty Line
           $content = Get-Content manifests/deployment.yml
-          $content | ForEach-Object {$_ -replace $line,"        image: ${{ inputs.ACRNAME }}.azurecr.io/${{ inputs.APPNAME }}:${{ github.run_number }}"} | Set-Content manifests/deployment.yml
+          $content | ForEach-Object {$_ -replace $line,"        image: $REGISTRY_NAME.azurecr.io/${{ inputs.APPNAME }}:${{ github.run_number }}"} | Set-Content manifests/deployment.yml
         azPSVersion: "latest"
     
     - name: Commit changes in manifest to repo
