@@ -27,36 +27,47 @@ jobs:
         run: |
           git_hash=$(git rev-parse --short "${{ github.sha }}")
           image_tag="$git_hash"
-          docker build -t $REGISTRY_NAME.azurecr.io/myimage:$image_tag .
+          docker build -t $REGISTRY_NAME.azurecr.io/myimage:${{ github.run_number }} .
           echo "Pushing image to ACR..."
-          docker push $REGISTRY_NAME.azurecr.io/myimage:$image_tag
+          docker push $REGISTRY_NAME.azurecr.io/myimage:${{ github.run_number }}
 
-      - name: Update version
-        run: | 
-          git_hash=$(git rev-parse --short "${{ github.sha }}")
-          sed -Ei "s/(version:).*/\1 refs\/heads\/main-$git_hash/" ./manifests/deployment.yml
+#       - name: Update version
+#         run: | 
+#           git_hash=$(git rev-parse --short "${{ github.sha }}")
+#           sed -Ei "s/(version:).*/\1 refs\/heads\/main-$git_hash/" ./manifests/deployment.yml
 
-      - name: Commit and push changes
-        uses: devops-infra/action-commit-push@v0.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          commit_message: Version updated
+#       - name: Commit and push changes
+#         uses: devops-infra/action-commit-push@v0.3
+#         with:
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
+#           commit_message: Version updated
 
-  deploy:
-    needs: build
-    name: Deploy with Argo CD
+  Update-K8s-Manifests:
+    name: Update K8s Deployment Manifest with Image Version
+    #needs: BuildPush
+    environment: ${{ inputs.Environment }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Install Argo CD CLI
-        run: |
-          wget https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 -O /usr/local/bin/argocd
-          chmod +x /usr/local/bin/argocd
 
-      - name: Configure Argo CD
-        run: |
-          argocd login --insecure --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }} --grpc-web ${{ secrets.ARGOCD_API_SERVER }}
+    # Checks out the baseline repository
+    - uses: actions/checkout@v2
 
-      - name: Sync Application
-        run: |
-          argocd app sync my-app
+    - name: Update image name in manifest file
+      uses: azure/powershell@v1
+      with:
+        inlineScript: |
+          $line = Get-Content workloads/flask/deployment.yaml | Select-String image: | Select-Object -ExpandProperty Line
+          $content = Get-Content manifests/deployment.yaml
+          $content | ForEach-Object {$_ -replace $line,"        image: ${{ inputs.ACRNAME }}.azurecr.io/${{ inputs.APPNAME }}:${{ github.run_number }}"} | Set-Content workloads/flask/deployment.yaml
+        azPSVersion: "latest"
+    
+    - name: Commit changes in manifest to repo
+      run: | 
+        git config user.name "GitHub Actions Bot"
+        git config user.email ""
+        git add manifests/deployment.yaml
+        git commit -m "Update image version in K8s Deployment manifests file"
+        git push origin
+        git commit -m "Update image version in K8s Deployment manifests file"
+        git push origin
+  
