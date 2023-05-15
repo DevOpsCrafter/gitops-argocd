@@ -45,7 +45,7 @@ jobs:
   Update-K8s-Manifests:
     name: Update K8s Deployment Manifest with Image Version
     #needs: BuildPush
-    environment: ${{ inputs.Environment }}
+    #environment: ${{ inputs.Environment }}
     runs-on: ubuntu-latest
     steps:
 
@@ -58,13 +58,13 @@ jobs:
         inlineScript: |
           $line = Get-Content manifests/deployment.yml | Select-String image: | Select-Object -ExpandProperty Line
           $content = Get-Content manifests/deployment.yml
-          $content | ForEach-Object {$_ -replace $line,"        image: $REGISTRY_NAME.azurecr.io/${{ inputs.APPNAME }}:${{ github.run_number }}"} | Set-Content manifests/deployment.yml
+          $content | ForEach-Object {$_ -replace $line,"        image: testacrpd.azurecr.io/${{ inputs.APPNAME }}:${{ github.run_number }}"} | Set-Content manifests/deployment.yml
         azPSVersion: "latest"
     
     - name: Commit changes in manifest to repo
       run: | 
         git config user.name "GitHub Actions Bot"
-        git config user.email ""
+        git config user.email "demo123@gmail.com"
         git add manifests/deployment.yml
         git commit -m "Update image version in K8s Deployment manifests file"
         git push origin
